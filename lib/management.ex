@@ -10,8 +10,12 @@ defmodule Management do
     clients = parse_client_file("./resources/clients.txt")
     payments = parse_payment_file("./resources/payments.txt")
 
-    debtors = get_debtors(clients, payments)
-    Exporter.export_as_csv("./debtors.csv", debtors)
+    IO.inspect(Enum.count(payments))
+    IO.inspect(Enum.count(Stream.filter(payments, fn payment -> payment[:client_id] === 0 end)))
+
+    payments_relation = join_ordered_by_date(clients, payments)
+
+    Exporter.export_as_csv("./payments_relation.csv", payments_relation)
   end
 
   @doc """
@@ -21,8 +25,8 @@ defmodule Management do
     clients = parse_client_file(clients_filepath)
     payments = parse_payment_file(payments_filepath)
 
-    debtors = get_debtors(clients, payments)
-    Exporter.export_as_csv(output_path, debtors)
+    payments_relation = join_ordered_by_date(clients, payments)
+    Exporter.export_as_csv(output_path, payments_relation)
   end
 
   @doc """
@@ -32,25 +36,86 @@ defmodule Management do
     clients = parse_client_file(client_filepath)
     payments = parse_payment_file(payments_filepath)
 
-    get_debtors(clients, payments)
+    join_ordered_by_date(clients, payments)
   end
 
-  defp get_debtors(clients, payments) do
+  defp join_ordered_by_date(clients, transactions) do
+    clients
+    |> join_clients_with_transactions(transactions)
+    |> create_transaction_records_per_day()
+    |> Enum.to_list()
+  end
+
+  defp join_clients_with_transactions(clients, transactions) do
     clients
     |> Stream.map(fn client ->
+      transactions_from_client =
+        transactions
+        |> Enum.filter(fn payment -> payment[:client_id] === client[:id] end)
+        |> Enum.group_by(fn payment -> payment[:date] end)
+
       %{
-        id: client[:id],
         name: client[:name],
-        debt:
-          payments
-          |> Stream.filter(fn payment ->
-            payment[:client_id] === client[:id]
-          end)
-          |> Stream.map(fn payment -> payment[:price] end)
-          |> Enum.sum()
+        id: client[:id],
+        transactions: transactions_from_client
       }
     end)
-    |> Enum.to_list()
+    |> Enum.sort(&(&1[:date] < &2[:date]))
+  end
+
+  defp create_transaction_records_per_day(clients) do
+    clients
+    |> Enum.reduce([], fn current_client, transactions_records ->
+      # if current_client[:id] === 0 do
+      #   IO.inspect(current_client)
+      # end
+
+      date_keys = Map.keys(current_client[:transactions])
+
+      {_, _, records} =
+        date_keys
+        |> Enum.reduce({0, 0, []}, fn date_key, {total, pending, client_records} ->
+          transactions = current_client[:transactions][date_key]
+
+          {total_paid_date, pending_date} =
+            get_transactions_total_from_client_for_the_day(transactions, total, pending)
+
+          {total_paid_date, pending_date,
+           [
+             %{
+               name: current_client[:name],
+               id: current_client[:id],
+               date: date_key,
+               total_paid: total_paid_date,
+               pending: pending_date
+             }
+             | client_records
+           ]}
+        end)
+
+      [records | transactions_records]
+    end)
+    |> Stream.flat_map(& &1)
+    |> Enum.sort_by(& &1[:date])
+  end
+
+  defp get_transactions_total_from_client_for_the_day(transactions, total, pending) do
+    transactions
+    |> Enum.reduce({total, pending}, fn transaction, {paid, pending} ->
+      paid_on_date = if transaction[:paid] === true, do: transaction[:price], else: 0
+      pending_on_date = if transaction[:paid] === false, do: transaction[:price], else: 0
+
+      temp_pending = pending + pending_on_date - paid_on_date
+
+      calculated_pending =
+        if temp_pending < 0 do
+          0
+        else
+          temp_pending
+        end
+
+      {paid + paid_on_date, calculated_pending}
+    end)
   end
 
   @doc """
@@ -82,7 +147,6 @@ defmodule Management do
         paid: Enum.at(payment_data, 4) === "t"
       }
     end)
-    |> Stream.filter(fn item -> item.paid === false end)
     |> Enum.to_list()
   end
 end

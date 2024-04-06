@@ -16,6 +16,7 @@ defmodule Helper do
 
   defp get_result_as_date(nil, string) do
     [_, day, month, year] = Regex.run(~r/(?<day>\d{1})(?<month>\d{2})(?<year>\d{4})/, string)
+
     %{day: "0" <> day, month: month, year: year}
     |> create_date
   end
@@ -25,8 +26,17 @@ defmodule Helper do
     |> create_date
   end
 
-  defp create_date(%{day: day, month: month, year: year} ) do
+  defp create_date(%{day: day, month: month, year: year}) do
     {_, date} = Date.from_iso8601("#{year}-#{month}-#{day}")
     date
+  end
+
+  def round(value, precision) when is_float(value) do
+    value
+    |> Float.round(precision)
+  end
+
+  def round(value, _) do
+    value
   end
 end

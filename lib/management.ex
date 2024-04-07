@@ -19,9 +19,9 @@ defmodule Management do
   end
 
   @doc """
-  receives a clients path, payments path and output path and creates a csv with the clients debt
+  receives a clients path, payments path and output path and creates a csv with the clients transactions
   """
-  def get_csv_with_clients_debts(clients_filepath, payments_filepath, output_path) do
+  def get_csv_with_clients_transactions(clients_filepath, payments_filepath, output_path) do
     clients = parse_client_file(clients_filepath)
     payments = parse_payment_file(payments_filepath)
 
@@ -30,9 +30,9 @@ defmodule Management do
   end
 
   @doc """
-  Receives a clients file path and a payments path and return the debts from the clients
+  Receives a clients file path and a payments path and return the transactions from the clients
   """
-  def get_clients_debts(client_filepath, payments_filepath) do
+  def get_clients_transactions(client_filepath, payments_filepath) do
     clients = parse_client_file(client_filepath)
     payments = parse_payment_file(payments_filepath)
 

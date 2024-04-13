@@ -7,6 +7,7 @@ defmodule Schemas.Transaction do
     field :pending, :float
     field :date, :date
     field :client_id, :integer
+    timestamps([:inserted_at, :updated_at])
   end
 
 end

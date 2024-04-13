@@ -2,6 +2,13 @@ defmodule Management do
   @moduledoc """
   Documentation for `Management`.
   """
+  def seed_db do
+    clients = parse_client_file("./resources/clients.txt")
+    payments = parse_payment_file("./resources/payments.txt")
+
+    Database.insert_clients(clients)
+    Database.insert_payments(payments)
+  end
 
   @doc """
   test method to quick generate a csv file

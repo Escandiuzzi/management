@@ -3,8 +3,13 @@ defmodule Schemas.Client do
 
   schema "clients" do
     field :name, :string
-    field :inserted_at, :utc_datetime
-    field :updated_at, :utc_datetime
+    timestamps([:inserted_at, :updated_at])
+  end
+
+  def changeset(person, params \\ %{}) do
+    person
+    |> Ecto.Changeset.cast(params, [:id, :name])
+    |> Ecto.Changeset.validate_required([:id, :name])
   end
 
 end

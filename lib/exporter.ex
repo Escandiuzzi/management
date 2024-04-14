@@ -1,11 +1,11 @@
 defmodule Exporter do
-  def export_as_csv(path, clients) do
+  def export_as_csv(path, transactions) do
     file = File.open!(path, [:write, :utf8])
 
-    clients
+    transactions
     |> CSV.encode(
       headers: [
-        id: "ID",
+        client_id: "ID",
         name: "Name",
         total_paid: "Total Paid",
         pending: "Pending",

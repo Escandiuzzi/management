@@ -10,4 +10,9 @@ defmodule Schemas.Transaction do
     timestamps([:inserted_at, :updated_at])
   end
 
+  def changeset(person, params \\ %{}) do
+    person
+    |> Ecto.Changeset.cast(params, [:name, :total_paid, :pending, :date, :client_id])
+    |> Ecto.Changeset.validate_required([:name, :total_paid, :pending, :date, :client_id])
+  end
 end

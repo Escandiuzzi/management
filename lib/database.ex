@@ -22,4 +22,16 @@ defmodule Database do
     Schemas.Payment.changeset(%Schemas.Payment{}, payment)
     |> Management.Repo.insert()
   end
+
+  def insert_transactions(transactions) do
+    Enum.each(transactions, fn transaction ->
+      transaction
+      |> insert_transaction
+    end)
+  end
+
+  def insert_transaction(transaction) do
+    Schemas.Transaction.changeset(%Schemas.Transaction{}, transaction)
+    |> Management.Repo.insert()
+  end
 end

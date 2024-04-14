@@ -1,4 +1,8 @@
 defmodule Management do
+  import Ecto.Query
+  alias Management.Repo
+  alias Schemas.{Client, Payment}
+
   @moduledoc """
   Documentation for `Management`.
   """
@@ -17,11 +21,35 @@ defmodule Management do
     clients = parse_client_file("./resources/clients.txt")
     payments = parse_payment_file("./resources/payments.txt")
 
-    IO.inspect(Enum.count(payments))
-    IO.inspect(Enum.count(Stream.filter(payments, fn payment -> payment[:client_id] === 0 end)))
+    payments_relation = join_ordered_by_date(clients, payments)
+
+    Database.insert_transactions(payments_relation)
+    Exporter.export_as_csv("./payments_relation.csv", payments_relation)
+  end
+
+  def exec_from_db() do
+    query = from(c in Client)
+    clients_from_db = Repo.all(query)
+
+    query = from(p in Payment)
+    payments_from_db = Repo.all(query)
+
+    clients = Enum.map(clients_from_db, fn client -> %{id: client.id, name: client.name} end)
+
+    payments =
+      Enum.map(payments_from_db, fn payment ->
+        %{
+          client_id: payment.client_id,
+          date: payment.date,
+          product_code: payment.product_code,
+          price: payment.price,
+          paid: payment.paid
+        }
+      end)
 
     payments_relation = join_ordered_by_date(clients, payments)
 
+    Database.insert_transactions(payments_relation)
     Exporter.export_as_csv("./payments_relation.csv", payments_relation)
   end
 
@@ -73,10 +101,6 @@ defmodule Management do
   defp create_transaction_records_per_day(clients) do
     clients
     |> Enum.reduce([], fn current_client, transactions_records ->
-      # if current_client[:id] === 0 do
-      #   IO.inspect(current_client)
-      # end
-
       date_keys = Map.keys(current_client[:transactions])
 
       {_, _, records} =
@@ -91,7 +115,7 @@ defmodule Management do
            [
              %{
                name: current_client[:name],
-               id: current_client[:id],
+               client_id: current_client[:id],
                date: date_key,
                total_paid: total_paid_date,
                pending: pending_date

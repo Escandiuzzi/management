@@ -31,9 +31,9 @@ defmodule ManagementTest do
     payment_filepath = "./resources/payments.test.txt"
 
     expected_result = [
-      %{id: 5, name: "Client 5", date: ~D[2015-02-02], pending: 0, total_paid: 3.34},
-      %{id: 5, name: "Client 5", date: ~D[2014-02-15], pending: 9.77, total_paid: 3.34},
-      %{id: 21, name: "Client 21", pending: 77.0, date: ~D[2014-02-15], total_paid: 0}
+      %{client_id: 5, name: "Client 5", date: ~D[2015-02-02], pending: 0, total_paid: 3.34},
+      %{client_id: 5, name: "Client 5", date: ~D[2014-02-15], pending: 9.77, total_paid: 3.34},
+      %{client_id: 21, name: "Client 21", pending: 77.0, date: ~D[2014-02-15], total_paid: 0}
     ]
 
     result = Management.get_clients_transactions(client_filepath, payment_filepath)
